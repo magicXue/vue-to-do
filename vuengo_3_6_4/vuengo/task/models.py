@@ -10,4 +10,4 @@ class Task(models.Model):
     }
 
     description = models.CharField(max_length=255)
-    status = models.CharField(max_length=10, choice=STATUS_CHOICES, default=TODO)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=TODO)
