@@ -5,12 +5,12 @@
     <hr>
     <div class="columns">
       <div class="column is-3 is-offset-3">
-        <form>
+        <form v-on:submit.prevent="addTask">
           <h2 class="subtitle">Add task</h2>
           <div class="field">
             <label for="" class="label">Description</label>
             <div class="control">
-              <input type="text" class="input">
+              <input type="text" class="input" v-model="description">
             </div>
           </div>
 
@@ -18,7 +18,7 @@
             <label class="label">Status</label>
             <div class="control">
               <div class="select">
-                <select>
+                <select v-model="status">
                   <option value="todo">To do</option>
                   <option value="done">Done</option>
                 </select>
@@ -41,16 +41,19 @@
           <div class="card" v-for="task in tasks" v-if="task.status === 'todo'" :key="task.id">
             <div class="card-content">{{ task.description }}</div>
             <footer class="card-footer">
-              <a class="card-footer-item">Done</a>
+              <a class="card-footer-item" @click="setStatus(task.id, 'done')">Done</a>
             </footer> 
           </div>
         </div>
       </div>
       <div class="column is-6">
         <h2 class="subtitle">Done</h2>
-        <div class="todo">
+        <div class="done">
           <div class="card" v-for="task in tasks" v-if="task.status === 'done'" :key="task.id">
             <div class="card-content">{{ task.description }}</div>
+            <footer class="card-footer">
+              <a class="card-footer-item" @click="setStatus(task.id, 'todo')">To do</a>
+            </footer> 
           </div>
         </div>
       </div>
@@ -65,13 +68,44 @@ export default {
   name: 'Home',
   data () {
     return {
-      tasks: []
+      tasks: [],
+      description: '',
+      status: 'todo'
     }
   },
   mounted() {
     this.getTasks()
   },
   methods: {
+    addTask() {
+      if(this.description) {
+        axios({
+          method:'post',
+          url:'http://127.0.0.1:8000/tasks/',
+          data:{
+            description: this.description,
+            status: this.status
+          },
+          auth: {
+            username:'admin',
+            password: 'admin'
+          }
+        }).then((response) => {
+          let newTask = {
+            'id': response.data.id,
+            'description': response.data.description,
+            'status': response.data.status,
+          }
+
+          this.tasks.push(newTask)
+          this.description = ''
+          this.status = 'todo'
+
+        }).catch((error) => {
+          console.log('error',error);
+        })
+      }
+    },
     getTasks() {
       axios({
         method:'get',
@@ -81,6 +115,29 @@ export default {
           password: 'admin'
         }
       }).then(response => this.tasks = response.data)
+    },
+    setStatus(id, status) {
+      let description = ''
+      const task = this.tasks.filter(task => task.id == id)[0]
+      description = task.description
+      axios({
+        method:'put',
+        url:'http://127.0.0.1:8000/tasks/'+ id +'/',
+        auth: {
+          username:'admin',
+          password: 'admin'
+        },
+        headers: {
+          'Content-Type' : 'application/json',
+
+        },
+        data: {
+          status: status,
+          description: description
+        }
+      }).then((response) => {
+        task.status = status
+      })
     }
   }
 }
