@@ -58,19 +58,31 @@
         </div>
       </div>
     </div>
+    <SnackBox
+      :snackbar = "snackbar"
+      :text = "text"
+      :snackcolor = "color"
+    />
   </div>
+  
 </template>
 
 <script>
 import axios from 'axios'
-
+import SnackBox from '@/components/SnackBox'
 export default {
   name: 'Home',
+  components: {
+    SnackBox
+  },
   data () {
     return {
       tasks: [],
       description: '',
-      status: 'todo'
+      status: 'todo',
+      snackbar: false,
+      text: '',
+      color: 'info',
     }
   },
   mounted() {
@@ -78,6 +90,7 @@ export default {
   },
   methods: {
     addTask() {
+      this.snackbar = false
       if(this.description) {
         axios({
           method:'post',
@@ -100,13 +113,16 @@ export default {
           this.tasks.push(newTask)
           this.description = ''
           this.status = 'todo'
-
+          this.snackbar = true
+          this.text = 'Still need to do'
+          this.color = 'success'
         }).catch((error) => {
           console.log('error',error);
         })
       }
     },
     getTasks() {
+      this.snackbar = false
       axios({
         method:'get',
         url:'http://127.0.0.1:8000/tasks/',
@@ -114,9 +130,12 @@ export default {
           username:'admin',
           password: 'admin'
         }
-      }).then(response => this.tasks = response.data)
+      }).then(response => {
+        this.tasks = response.data
+      })
     },
     setStatus(id, status) {
+      this.snackbar = false
       let description = ''
       const task = this.tasks.filter(task => task.id == id)[0]
       description = task.description
@@ -137,6 +156,15 @@ export default {
         }
       }).then((response) => {
         task.status = status
+        if(status == 'todo'){
+          this.snackbar = true
+          this.text = 'Still need to do'
+          this.color = 'error'
+        }else{
+          this.snackbar = true
+          this.text = 'Finish the Job'
+          this.color = 'info'
+        }
       })
     }
   }
